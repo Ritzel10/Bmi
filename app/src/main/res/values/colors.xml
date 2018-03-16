@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#311b92</color>
+    <color name="colorPrimaryDark">#000063</color>
+    <color name="colorPrimaryLight">#6746c3</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <color name="black_overlay">#66000000</color>
+
+    <color name="colorBmiUnderweight">#ef6c00</color>
+    <color name="colorBmiNormal">#388e3c</color>
+    <color name="colorBmiOverweight">#d32f2f</color>
+    <color name="colorBmiObese">#690d13</color>
+
+    <color name="textColor">#fff</color>
+    <color name="textColorSecondary">#e0e0e0</color>
+</resources>
