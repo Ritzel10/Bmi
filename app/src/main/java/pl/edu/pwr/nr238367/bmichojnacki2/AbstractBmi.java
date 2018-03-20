@@ -20,7 +20,7 @@ abstract class AbstractBmi {
     protected abstract double calculateBmi();
 
     protected boolean dataAreValid() {
-        return getHeight() > 0 && getWeight() > 0 && getHeight() < getMaxHeight() && getWeight() < getMaxWeight();
+        return getHeight() > 0 && getWeight() > 0 && getHeight() <= getMaxHeight() && getWeight() <= getMaxWeight();
     }
 
     protected abstract double getMaxHeight();
