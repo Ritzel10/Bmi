@@ -20,6 +20,10 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity {
     private static final int default_spinner_selection_id = 0;
     private boolean spinnerClickedByUser = false;
+    private EditText weightEdit;
+    private EditText heightEdit;
+    private Spinner unitSpinner;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,61 +33,29 @@ public class MainActivity extends AppCompatActivity {
         final Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        //call findviewbyid's
+        weightEdit = findViewById(R.id.weightEdit);
+        heightEdit = findViewById(R.id.heightEdit);
+        unitSpinner = findViewById(R.id.unitSpinner);
+
         //add logic to app's button
         final Button button = findViewById(R.id.bmiButton);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
-                EditText weightText = findViewById(R.id.weightEdit);
-                EditText heightText = findViewById(R.id.heightEdit);
-
-                Spinner units = findViewById(R.id.unitSpinner);
-                String s = units.getSelectedItem().toString();
-                AbstractBmi bmi;
-                //pick a BMI calculating class depending on spinner option
-                if (s.equals(getResources().getString(R.string.units_kgcm))) {
-                    bmi = new BmiMetricCentimeters();
-
-                } else if (s.equals(getResources().getString(R.string.units_lbin))) {
-                    bmi = new BmiImperial();
-
-                } else {
-                    bmi = new BmiMetric();
-                }
-                double bmiVal;
-                try {
-                    bmiVal = parseStringsAndCalculateBmiValue(weightText.getText().toString(), heightText.getText().toString(), bmi);
-                }
-                //if data are incorrect show a toast with a message
-                catch (IllegalArgumentException ex) {
-                    Toast.makeText(getApplicationContext(), getString(R.string.toast_bad_data), Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                //if correct send bmi value to Result activity
-                Intent intentResult = new Intent(getApplicationContext(), ResultActivity.class);
-                intentResult.putExtra(getResources().getString(R.string.extra_bmi), bmiVal);
-                startActivity(intentResult);
-
+                buttonOnClick();
             }
         });
-
-        //restore saved values
-        SharedPreferences preferences = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-        updateSpinnerSelection((Spinner) findViewById(R.id.unitSpinner), preferences.getInt(getString(R.string.extra_unit_id), default_spinner_selection_id));
-
-        EditText weightEdit = findViewById(R.id.weightEdit);
-        String weight = preferences.getString(getString(R.string.extra_weight), getString(R.string.default_text));
-        updateEditTextValue(weightEdit, weight);
-        EditText heightEdit = findViewById(R.id.heightEdit);
-        String height = preferences.getString(getString(R.string.extra_height), getString(R.string.default_text));
-        updateEditTextValue(heightEdit, height);
+        //restore saved input values
+        restoreSavedValues();
+        setUnitSpinnerListeners();
 
 
-        final Spinner spinner = findViewById(R.id.unitSpinner);
+    }
+
+    private void setUnitSpinnerListeners() {
         //ontouch and onkey listeners are used to distinguish between user and programmatic click
-        spinner.setOnTouchListener(new View.OnTouchListener() {
+        unitSpinner.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 view.performClick();
@@ -91,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
-        spinner.setOnKeyListener(new View.OnKeyListener() {
+        unitSpinner.setOnKeyListener(new View.OnKeyListener() {
 
             @Override
             public boolean onKey(View view, int i, KeyEvent keyEvent) {
@@ -100,17 +72,12 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-        //clean input values when changing units
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+
+        unitSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                //if spinner was clicked by the user
-                if (spinnerClickedByUser) {
-                    ((EditText) findViewById(R.id.heightEdit)).setText(getString(R.string.default_text));
-                    ((EditText) findViewById(R.id.weightEdit)).setText(getString(R.string.default_text));
-                }
-                //return to default value
-                spinnerClickedByUser = false;
+                spinnerOnItemSelected();
+
             }
 
             @Override
@@ -120,6 +87,55 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    //clean input values when changing units
+    private void spinnerOnItemSelected() {
+        //if spinner was clicked by the user
+        if (spinnerClickedByUser) {
+            heightEdit.setText(getString(R.string.default_text));
+            weightEdit.setText(getString(R.string.default_text));
+        }
+        //return to default value
+        spinnerClickedByUser = false;
+    }
+
+    private void restoreSavedValues() {
+        SharedPreferences preferences = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        updateSpinnerSelection(unitSpinner, preferences.getInt(getString(R.string.extra_unit_id), default_spinner_selection_id));
+
+        String weight = preferences.getString(getString(R.string.extra_weight), getString(R.string.default_text));
+        updateEditTextValue(weightEdit, weight);
+        String height = preferences.getString(getString(R.string.extra_height), getString(R.string.default_text));
+        updateEditTextValue(heightEdit, height);
+    }
+
+    private void buttonOnClick() {
+        String s = unitSpinner.getSelectedItem().toString();
+        AbstractBmi bmi;
+        //pick a BMI calculating class depending on spinner option
+        if (s.equals(getResources().getString(R.string.units_kgcm))) {
+            bmi = new BmiMetricCentimeters();
+
+        } else if (s.equals(getResources().getString(R.string.units_lbin))) {
+            bmi = new BmiImperial();
+
+        } else {
+            bmi = new BmiMetric();
+        }
+        double bmiVal;
+        try {
+            bmiVal = parseStringsAndCalculateBmiValue(weightEdit.getText().toString(), heightEdit.getText().toString(), bmi);
+        }
+        //if data are incorrect show a toast with a message
+        catch (IllegalArgumentException ex) {
+            Toast.makeText(getApplicationContext(), getString(R.string.toast_bad_data), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        //if correct send bmi value to Result activity
+        Intent intentResult = new Intent(getApplicationContext(), ResultActivity.class);
+        intentResult.putExtra(getResources().getString(R.string.extra_bmi), bmiVal);
+        startActivity(intentResult);
+    }
     private double parseStringsAndCalculateBmiValue(String weight, String height, AbstractBmi bmi) {
         double weightVal;
         double heightVal;
@@ -180,14 +196,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void saveValuesToBundle(Bundle bundle) {
         //save input values
-        EditText weightText = findViewById(R.id.weightEdit);
-        EditText heightText = findViewById(R.id.heightEdit);
-        bundle.putString(getString(R.string.extra_weight), weightText.getText().toString());
-        bundle.putString(getString(R.string.extra_height), heightText.getText().toString());
+        bundle.putString(getString(R.string.extra_weight), weightEdit.getText().toString());
+        bundle.putString(getString(R.string.extra_height), heightEdit.getText().toString());
 
         //save spinner value
-        Spinner unitsSpinner = findViewById(R.id.unitSpinner);
-        bundle.putInt(getString(R.string.extra_unit_id), (int) unitsSpinner.getSelectedItemId());
+        bundle.putInt(getString(R.string.extra_unit_id), (int) unitSpinner.getSelectedItemId());
     }
 
     private void saveValuesToSharedPreferences(Bundle bundle, SharedPreferences sharedPreferences) {
@@ -202,15 +215,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {
         //restore spinner value
-        Spinner spinner = findViewById(R.id.unitSpinner);
-        updateSpinnerSelection(spinner, savedInstanceState.getInt(getString(R.string.extra_unit_id)));
+        updateSpinnerSelection(unitSpinner, savedInstanceState.getInt(getString(R.string.extra_unit_id)));
 
         //restore input values if present
         String weight = savedInstanceState.getString(getString(R.string.extra_weight));
         String height = savedInstanceState.getString(getString(R.string.extra_height));
-        EditText weightEdit = findViewById(R.id.weightEdit);
         updateEditTextValue(weightEdit, weight);
-        EditText heightEdit = findViewById(R.id.heightEdit);
         updateEditTextValue(heightEdit, height);
 
     }
